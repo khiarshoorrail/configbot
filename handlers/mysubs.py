@@ -18,9 +18,11 @@ async def my_subs(message: Message) -> None:
     if not orders:
         await message.answer("هنوز اشتراک فعالی نداری. با دکمه «خرید اشتراک» شروع کن!", reply_markup=main_menu())
         return
+    volumes = await plans.get_volumes()
+    durations = await plans.get_durations()
     lines = ["📦 اشتراک‌های تو:\n"]
     for o in orders:
-        vol = plans.VOLUMES.get(o["volume_key"], {}).get("title", "?")
-        dur = plans.DURATIONS.get(o["duration_key"], {}).get("title", "?")
+        vol = volumes.get(o["volume_key"], {}).get("title", "?")
+        dur = durations.get(o["duration_key"], {}).get("title", "?")
         lines.append(f"• {vol} — {dur}\n<code>{o['sub_url']}</code>\n")
     await message.answer("\n".join(lines), reply_markup=main_menu())

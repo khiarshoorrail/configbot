@@ -10,6 +10,7 @@ from aiogram.types import CallbackQuery, Message
 import config
 import database
 import plans
+import services
 import texts
 from keyboards import (
     cancel_menu,
@@ -18,7 +19,6 @@ from keyboards import (
     receipt_actions,
     volumes_kb,
 )
-from panels_api import AllPanelsFailedError, create_config_on_any_panel, gb_to_bytes
 
 router = Router()
 log = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class BuyStates(StatesGroup):
 @router.message(F.text == texts.BTN_BUY)
 async def start_buy(message: Message, state: FSMContext) -> None:
     await state.set_state(BuyStates.choosing_volume)
-    await message.answer(texts.CHOOSE_VOLUME, reply_markup=volumes_kb(plans.VOLUMES).as_markup())
+    await message.answer(texts.CHOOSE_VOLUME, reply_markup=volumes_kb(await plans.get_volumes()).as_markup())
 
 
 @router.message(F.text == texts.BTN_CANCEL)
@@ -45,26 +45,30 @@ async def cancel(message: Message, state: FSMContext) -> None:
 @router.callback_query(BuyStates.choosing_volume, F.data.startswith("vol:"))
 async def pick_volume(cb: CallbackQuery, state: FSMContext) -> None:
     volume_key = cb.data.split(":", 1)[1]
-    if volume_key not in plans.VOLUMES:
+    volumes = await plans.get_volumes()
+    if volume_key not in volumes:
         await cb.answer()
         return
     await state.update_data(volume_key=volume_key)
     await state.set_state(BuyStates.choosing_duration)
-    await cb.message.edit_text(texts.CHOOSE_DURATION, reply_markup=durations_kb(plans.DURATIONS).as_markup())
+    await cb.message.edit_text(
+        texts.CHOOSE_DURATION, reply_markup=durations_kb(await plans.get_durations()).as_markup()
+    )
     await cb.answer()
 
 
 @router.callback_query(BuyStates.choosing_duration, F.data.startswith("dur:"))
 async def pick_duration(cb: CallbackQuery, state: FSMContext) -> None:
     duration_key = cb.data.split(":", 1)[1]
-    if duration_key not in plans.DURATIONS:
+    durations = await plans.get_durations()
+    if duration_key not in durations:
         await cb.answer()
         return
     data = await state.get_data()
     volume_key = data["volume_key"]
 
-    price = plans.get_price(volume_key, duration_key)
-    summary = plans.order_summary(volume_key, duration_key)
+    price = await plans.get_price(volume_key, duration_key)
+    summary = await plans.order_summary(volume_key, duration_key)
 
     order_id = await database.create_order(cb.from_user.id, volume_key, duration_key)
     code = f"ORD-{order_id:04d}"
@@ -122,39 +126,24 @@ async def approve_order(cb: CallbackQuery, bot: Bot) -> None:
         await cb.answer("دسترسی نداری.", show_alert=True)
         return
     order_id = int(cb.data.split(":", 1)[1])
-    order = await database.get_order(order_id)
-    if not order or order["status"] not in ("awaiting_confirm",):
+    result = await services.approve_order_core(bot, order_id)
+
+    if result == "already":
         await cb.answer("این سفارش قبلاً پردازش شده.", show_alert=True)
         return
-
-    vol = plans.VOLUMES[order["volume_key"]]
-    dur = plans.DURATIONS[order["duration_key"]]
-
-    try:
-        sub_url, panel_name = await create_config_on_any_panel(gb_to_bytes(vol["gb"]), dur["days"])
-    except AllPanelsFailedError as e:
-        log.error("all panels failed for order %s: %s", order_id, e)
+    if result.startswith("failed:"):
+        err = result[7:]
         await cb.message.edit_reply_markup(reply_markup=None)
-        await cb.answer("هیچ پنلی در دسترس نبود. جزئیات در لاگ.", show_alert=True)
-        try:
-            await bot.send_message(config.ADMIN_ID, f"⚠️ ساخت کانفیگ سفارش {order_id} روی همه پنل‌ها شکست خورد:\n{e}")
-        except Exception:
-            pass
-        return
-    except Exception as e:  # noqa: BLE001
-        log.error("create_config failed for order %s: %s", order_id, e)
-        await cb.message.edit_reply_markup(reply_markup=None)
-        await cb.answer(f"خطا در ساخت کانفیگ: {e}", show_alert=True)
+        if "هیچ پنلی" in err:
+            try:
+                await bot.send_message(config.ADMIN_ID, f"⚠️ ساخت کانفیگ سفارش {order_id} شکست خورد:\n{err}")
+            except Exception:
+                pass
+        await cb.answer(f"خطا در ساخت کانفیگ: {err}", show_alert=True)
         return
 
-    await database.set_order_status(order_id, "delivered", sub_url)
     await cb.message.edit_reply_markup(reply_markup=None)
     await cb.answer("تأیید شد ✅")
-
-    try:
-        await bot.send_message(order["user_id"], texts.ORDER_CONFIRMED.format(sub_url=sub_url))
-    except Exception:
-        log.exception("could not deliver to user %s", order["user_id"])
 
 
 @router.callback_query(F.data.startswith("reject:"))
@@ -163,14 +152,6 @@ async def reject_order(cb: CallbackQuery, bot: Bot) -> None:
         await cb.answer("دسترسی نداری.", show_alert=True)
         return
     order_id = int(cb.data.split(":", 1)[1])
-    order = await database.get_order(order_id)
-    if not order or order["status"] != "awaiting_confirm":
-        await cb.answer("این سفارش قبلاً پردازش شده.", show_alert=True)
-        return
-    await database.set_order_status(order_id, "rejected")
+    result = await services.reject_order_core(bot, order_id)
     await cb.message.edit_reply_markup(reply_markup=None)
-    await cb.answer("رد شد.")
-    try:
-        await bot.send_message(order["user_id"], texts.ORDER_REJECTED)
-    except Exception:
-        log.exception("could not notify user %s", order["user_id"])
+    await cb.answer("رد شد." if result == "ok" else "این سفارش قبلاً پردازش شده.")

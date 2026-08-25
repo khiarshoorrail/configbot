@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>پلن‌های فروش</h2>
+{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
+
+<div class="card">
+  <h3>📦 حجم‌ها</h3>
+  <table>
+    <tr><th>کلید</th><th>عنوان</th><th>گیگابایت (0=نامحدود)</th><th></th></tr>
+    {% for v in volumes %}
+    <tr>
+      <form method="post" action="/plans/volume">
+      <input type="hidden" name="key" value="{{ v.key }}">
+      <td><code>{{ v.key }}</code></td>
+      <td><input name="title" value="{{ v.title }}"></td>
+      <td><input name="gb" value="{{ v.gb }}" type="number"></td>
+      <td><button class="btn-primary" type="submit">ذخیره</button></td>
+      </form>
+      <td><a href="/plans-delete/volume?key={{ v.key }}"><button class="btn-danger">🗑</button></a></td>
+    </tr>
+    {% endfor %}
+    <tr style="background:#f9fafb;">
+      <form method="post" action="/plans/volume">
+      <td><input name="key" placeholder="vol_new"></td>
+      <td><input name="title" placeholder="عنوان جدید"></td>
+      <td><input name="gb" placeholder="50" type="number"></td>
+      <td><button class="btn-ok" type="submit">➕ افزودن</button></td>
+      </form>
+      <td></td>
+    </tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>⏳ مدت‌ها و قیمت‌ها</h3>
+  <table>
+    <tr><th>کلید</th><th>عنوان</th><th>روز</th><th>قیمت (تومان)</th><th></th></tr>
+    {% for d in durations %}
+    <tr>
+      <form method="post" action="/plans/duration">
+      <input type="hidden" name="key" value="{{ d.key }}">
+      <td><code>{{ d.key }}</code></td>
+      <td><input name="title" value="{{ d.title }}"></td>
+      <td><input name="days" value="{{ d.days }}" type="number"></td>
+      <td><input name="price" value="{{ d.price }}" type="number"></td>
+      <td><button class="btn-primary" type="submit">ذخیره</button></td>
+      </form>
+      <td><a href="/plans-delete/duration?key={{ d.key }}"><button class="btn-danger">🗑</button></a></td>
+    </tr>
+    {% endfor %}
+    <tr style="background:#f9fafb;">
+      <form method="post" action="/plans/duration">
+      <td><input name="key" placeholder="dur_45"></td>
+      <td><input name="title" placeholder="عنوان جدید"></td>
+      <td><input name="days" placeholder="45" type="number"></td>
+      <td><input name="price" placeholder="120000" type="number"></td>
+      <td><button class="btn-ok" type="submit">➕ افزودن</button></td>
+      </form>
+      <td></td>
+    </tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>♾ قیمت روزانه پلن نامحدود</h3>
+  <p class="muted">قیمت پلن نامحدود = این عدد × تعداد روز.</p>
+  <form method="post" action="/plans-unlimited" style="display:flex;gap:8px;max-width:320px;">
+    <input name="price" value="{{ unlimited_price }}" type="number">
+    <button class="btn-primary" type="submit">ذخیره</button>
+  </form>
+</div>
+{% endblock %}

@@ -24,3 +24,9 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "bot.db")
 
 # پروکسی SOCKS5 برای اجرا در ایران (مثلاً socks5://127.0.0.1:10808)
 PROXY_URL = os.getenv("PROXY_URL", "")
+
+# وب‌پنل ادمین (فقط لوکال؛ روی Railway فعال نکنید)
+ADMIN_WEB_ENABLED = os.getenv("ADMIN_WEB_ENABLED", "") == "1"
+ADMIN_WEB_HOST = os.getenv("ADMIN_WEB_HOST", "127.0.0.1")
+ADMIN_WEB_PORT = int(os.getenv("ADMIN_WEB_PORT", "8080"))
+ADMIN_WEB_PASSWORD = os.getenv("ADMIN_WEB_PASSWORD", "")

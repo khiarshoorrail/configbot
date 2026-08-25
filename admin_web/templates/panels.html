@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>پنل‌های v2ray متصل</h2>
+{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
+{% if tested %}<div class="flash err">🔌 تست: {{ tested }}</div>{% endif %}
+
+<table>
+  <tr><th>#</th><th>نام</th><th>نوع</th><th>آدرس</th><th>اینباند</th><th>وضعیت</th><th>عملیات</th></tr>
+  {% for p in panels %}
+  <tr>
+    <td>{{ p.id }}</td>
+    <td>{{ p.name }}</td>
+    <td>{{ "3x-ui" if p.type == "xui" else "Marzban" }}</td>
+    <td><code>{{ p.base_url[:35] }}…</code></td>
+    <td>{{ p.inbound_id or "—" }}</td>
+    <td>{{ "🟢 فعال" if p.enabled else "🔴 غیرفعال" }}</td>
+    <td>
+      <form class="inline" method="post" action="/panels/{{ p.id }}/toggle">
+        <button type="submit">{{ "🚫 غیرفعال" if p.enabled else "✅ فعال" }}</button>
+      </form>
+      <a href="/panels/{{ p.id }}/test"><button class="btn-warn">🔌 تست</button></a>
+      <form class="inline" method="post" action="/panels/{{ p.id }}/delete">
+        <button class="btn-danger" type="submit">🗑</button>
+      </form>
+    </td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan="6">
+      <form method="post" action="/panels/{{ p.id }}/edit" style="display:flex;gap:6px;flex-wrap:wrap;">
+        <input name="name" value="{{ p.name }}" style="max-width:130px;">
+        <input name="base_url" value="{{ p.base_url }}" style="max-width:230px;">
+        <input name="username" value="{{ p.username or '' }}" placeholder="یوزر" style="max-width:90px;">
+        <input name="password" value="{{ p.password or '' }}" placeholder="رمز" style="max-width:110px;">
+        <input name="inbound_id" value="{{ p.inbound_id or '' }}" placeholder="اینباند" style="max-width:70px;" type="number">
+        <input name="sub_base_url" value="{{ p.sub_base_url }}" placeholder="آدرس اشتراک" style="max-width:210px;">
+        <button class="btn-primary" type="submit">ویرایش</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div class="card" style="margin-top:20px;">
+  <h3>➕ افزودن پنل جدید</h3>
+  <p class="muted">راهنمای کامل در فایل PANELS_GUIDE.md پروژه.</p>
+  <form method="post" action="/panels/add" style="display:flex;gap:8px;flex-wrap:wrap;">
+    <select name="type" style="max-width:110px;">
+      <option value="xui">3x-ui</option>
+      <option value="marzban">Marzban</option>
+    </select>
+    <input name="name" placeholder="نام (مثلاً سرور آلمان)" style="max-width:150px;">
+    <input name="base_url" placeholder="https://panel.example.com:2053" style="max-width:250px;">
+    <input name="username" placeholder="یوزرنیم ادمین" style="max-width:130px;">
+    <input name="password" placeholder="رمز ادمین" style="max-width:140px;">
+    <input name="inbound_id" placeholder="اینباند (3x-ui)" style="max-width:120px;" type="number">
+    <input name="sub_base_url" placeholder="https://sub.example.com" style="max-width:220px;">
+    <button class="btn-ok" type="submit">افزودن + تست</button>
+  </form>
+</div>
+{% endblock %}

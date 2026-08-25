@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>آمار کلی</h2>
+{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
+{% if err %}<div class="flash err">{{ err }}</div>{% endif %}
+
+<div class="stats">
+  <div class="stat"><b>{{ stats.users }}</b>کاربران</div>
+  <div class="stat"><b>{{ stats.delivered }}</b>سفارش تحویل‌شده</div>
+  <div class="stat"><b>{{ stats.sales_today }}</b>فروش امروز</div>
+  <div class="stat"><b>{{ stats.pending }}</b>در انتظار تأیید</div>
+</div>
+
+<div class="card" style="margin-top:22px;">
+  <h3>📢 پیام همگانی</h3>
+  <p class="muted">این پیام برای همه کاربران ربات ارسال می‌شود.</p>
+  <form method="post" action="/broadcast">
+    <textarea name="text" placeholder="متن پیام..." required></textarea>
+    <br><br>
+    <button class="btn-primary" type="submit">ارسال به همه</button>
+  </form>
+</div>
+{% endblock %}

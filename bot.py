@@ -38,6 +38,7 @@ async def main() -> None:
         raise SystemExit("BOT_TOKEN و ADMIN_ID را در فایل .env تنظیم کن.")
 
     await database.init_db()
+    await database.seed_plans()
     migrated = await database.migrate_env_panel()
     if migrated:
         logging.getLogger(__name__).info("پنل پیش‌فرض از .env وارد دیتابیس شد.")
@@ -65,6 +66,10 @@ async def main() -> None:
     dp.include_router(start.router)
 
     await bot.delete_webhook(drop_pending_updates=True)
+    if config.ADMIN_WEB_ENABLED:
+        from admin_web import start_admin_web
+
+        await start_admin_web(bot)
     if github_backup.backup_enabled():
         asyncio.create_task(daily_backup_loop(bot))
         log.info("خودکار بکاپ روزانه روی گیت‌هاب فعال است.")

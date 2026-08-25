@@ -40,6 +40,22 @@ CREATE TABLE IF NOT EXISTS panels (
     enabled INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS plans (
+    kind TEXT NOT NULL,
+    key TEXT NOT NULL,
+    title TEXT NOT NULL,
+    gb INTEGER DEFAULT 0,
+    days INTEGER DEFAULT 0,
+    price INTEGER DEFAULT 0,
+    sort INTEGER DEFAULT 0,
+    PRIMARY KEY (kind, key)
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
 """
 
 
@@ -196,3 +212,141 @@ async def migrate_env_panel() -> bool:
         sub_base_url=config.XUI_SUB_BASE_URL,
     )
     return True
+
+
+# --- پلن‌های فروش (قابل ویرایش از وب) ---
+
+async def seed_plans() -> None:
+    from plans import SEED_VOLUMES, SEED_DURATIONS, SEED_UNLIMITED_DAY_PRICE
+
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        rows = await db.execute_fetchall("SELECT COUNT(*) FROM plans")
+        if rows[0][0] == 0:
+            for i, (key, v) in enumerate(SEED_VOLUMES.items()):
+                await db.execute(
+                    "INSERT INTO plans (kind, key, title, gb, sort) VALUES ('volume', ?, ?, ?, ?)",
+                    (key, v["title"], v["gb"], i),
+                )
+            for i, (key, d) in enumerate(SEED_DURATIONS.items()):
+                await db.execute(
+                    "INSERT INTO plans (kind, key, title, days, price, sort) VALUES ('duration', ?, ?, ?, ?, ?)",
+                    (key, d["title"], d["days"], d["price"], i),
+                )
+            await db.execute(
+                "INSERT OR IGNORE INTO settings (key, value) VALUES ('unlimited_day_price', ?)",
+                (str(SEED_UNLIMITED_DAY_PRICE),),
+            )
+            await db.commit()
+
+
+async def get_plans(kind: str):
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            "SELECT * FROM plans WHERE kind=? ORDER BY sort", (kind,)
+        )
+        return [dict(r) for r in rows]
+
+
+async def upsert_plan(kind: str, key: str, title: str, gb: int = 0, days: int = 0,
+                      price: int = 0, sort: int = 99) -> None:
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        await db.execute(
+            "INSERT INTO plans (kind, key, title, gb, days, price, sort) VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(kind, key) DO UPDATE SET title=excluded.title, gb=excluded.gb, "
+            "days=excluded.days, price=excluded.price, sort=excluded.sort",
+            (kind, key, title, gb, days, price, sort),
+        )
+        await db.commit()
+
+
+async def delete_plan(kind: str, key: str) -> None:
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        await db.execute("DELETE FROM plans WHERE kind=? AND key=?", (kind, key))
+        await db.commit()
+
+
+async def get_setting(key: str) -> str | None:
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        rows = await db.execute_fetchall("SELECT value FROM settings WHERE key=?", (key,))
+        return rows[0][0] if rows else None
+
+
+async def set_setting(key: str, value: str) -> None:
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        await db.execute(
+            "INSERT INTO settings (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (key, value),
+        )
+        await db.commit()
+
+
+# --- کوئری‌های ادمین ---
+
+async def list_users_stats(q: str = ""):
+    """کاربران + تعداد رفرال + تعداد سفارش، با جستجو."""
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        where = ""
+        params: list = []
+        if q:
+            where = "WHERE u.full_name LIKE ? OR u.username LIKE ? OR CAST(u.user_id AS TEXT) LIKE ?"
+            params = [f"%{q}%"] * 3
+        rows = await db.execute_fetchall(
+            f"""
+            SELECT u.*,
+              (SELECT COUNT(*) FROM referrals r WHERE r.referrer_id=u.user_id) AS referrals,
+              (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.user_id AND o.status='delivered') AS orders_count
+            FROM users u {where} ORDER BY u.joined_at DESC LIMIT 500
+            """,
+            params,
+        )
+        return [dict(r) for r in rows]
+
+
+async def list_orders_admin(status: str = ""):
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        where = ""
+        params: list = []
+        if status:
+            where = "WHERE o.status=?"
+            params = [status]
+        rows = await db.execute_fetchall(
+            f"""
+            SELECT o.*, u.full_name, u.username
+            FROM orders o LEFT JOIN users u ON u.user_id=o.user_id
+            {where} ORDER BY o.id DESC LIMIT 300
+            """,
+            params,
+        )
+        return [dict(r) for r in rows]
+
+
+async def stats_overview():
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        users_total = (await db.execute_fetchall("SELECT COUNT(*) FROM users"))[0][0]
+        delivered_total = (
+            await db.execute_fetchall("SELECT COUNT(*) FROM orders WHERE status='delivered'")
+        )[0][0]
+        pending = (
+            await db.execute_fetchall("SELECT COUNT(*) FROM orders WHERE status='awaiting_confirm'")
+        )[0][0]
+        sales_today = (
+            await db.execute_fetchall(
+                "SELECT COUNT(*) FROM orders WHERE status='delivered' AND date(created_at)=date('now','localtime')"
+            )
+        )[0][0]
+        return {
+            "users": users_total,
+            "delivered": delivered_total,
+            "pending": pending,
+            "sales_today": sales_today,
+        }
+
+
+async def get_all_user_ids():
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        rows = await db.execute_fetchall("SELECT user_id FROM users")
+        return [r[0] for r in rows]

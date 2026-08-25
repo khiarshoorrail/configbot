@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>کاربران ({{ users|length }})</h2>
+<form method="get" action="/users" style="max-width:420px;margin-bottom:14px;">
+  <div style="display:flex;gap:8px;">
+    <input name="q" value="{{ q }}" placeholder="جستجو: نام، یوزرنیم یا آیدی...">
+    <button class="btn-primary" type="submit">جستجو</button>
+  </div>
+</form>
+<table>
+  <tr><th>آیدی</th><th>نام</th><th>یوزرنیم</th><th>دعوت‌شده‌ها</th><th>سفارش تحویل‌شده</th><th>عضویت</th></tr>
+  {% for u in users %}
+  <tr>
+    <td><code>{{ u.user_id }}</code></td>
+    <td>{{ u.full_name or "—" }}</td>
+    <td>{% if u.username %}@{{ u.username }}{% else %}—{% endif %}</td>
+    <td>{{ u.referrals }}</td>
+    <td>{{ u.orders_count }}</td>
+    <td class="muted">{{ u.joined_at[:10] if u.joined_at else "—" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
