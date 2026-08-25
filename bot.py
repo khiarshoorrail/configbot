@@ -9,7 +9,23 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 import config
 import database
+import github_backup
 from handlers import backup, buy, chat, mysubs, panels, referral, start
+
+log = logging.getLogger(__name__)
+
+
+async def daily_backup_loop(bot: Bot) -> None:
+    """هر ۲۴ ساعت یک پشتیبان روی گیت‌هاب می‌گذارد."""
+    while True:
+        await asyncio.sleep(86400)
+        if not github_backup.backup_enabled():
+            continue
+        try:
+            url = await github_backup.upload_backup()
+            log.info("daily backup ok: %s", url)
+        except Exception as e:  # noqa: BLE001 — نبودن اینترنت یا API نباید ربات را بخواباند
+            log.error("daily backup failed: %s", e)
 
 
 async def main() -> None:
@@ -49,6 +65,9 @@ async def main() -> None:
     dp.include_router(start.router)
 
     await bot.delete_webhook(drop_pending_updates=True)
+    if github_backup.backup_enabled():
+        asyncio.create_task(daily_backup_loop(bot))
+        log.info("خودکار بکاپ روزانه روی گیت‌هاب فعال است.")
     await dp.start_polling(bot)
 
 

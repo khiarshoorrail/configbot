@@ -12,6 +12,7 @@ from aiogram.types import BufferedInputFile, CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 import config
+import github_backup
 import texts
 
 router = Router()
@@ -82,6 +83,27 @@ async def cmd_export(message: Message, bot: Bot) -> None:
         )
 
     await message.answer(texts.EXPORT_HINT)
+
+
+@router.message(Command("backup"))
+async def cmd_backup(message: Message, state: FSMContext) -> None:
+    if not _admin_only(message):
+        return
+    if not github_backup.backup_enabled():
+        await message.answer(
+            "⚠️ بکاپ گیت‌هاب فعال نیست.\n"
+            "در تنظیمات این دو متغیر را ست کن:\n"
+            "<code>GITHUB_BACKUP_REPO=username/repo</code>\n"
+            "<code>GITHUB_TOKEN=ghp_...</code>"
+        )
+        return
+    await message.answer("☁️ در حال آپلود پشتیبان روی گیت‌هاب...")
+    try:
+        url = await github_backup.upload_backup()
+        await message.answer(f"✅ پشتیبان آپلود شد:\n{url}")
+    except Exception as e:  # noqa: BLE001
+        log.error("manual backup failed: %s", e)
+        await message.answer(f"⚠️ آپلود ناموفق: {str(e)[:300]}")
 
 
 @router.message(Command("import"))
