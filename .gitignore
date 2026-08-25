@@ -1,0 +1,17 @@
+# تنظیمات محلی و حساس — هرگز آپلود نشود
+.env
+
+# دیتابیس و پشتیبان‌ها
+*.db
+*.db.bak-*
+*.db.import-tmp
+
+# پایتون
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# سیستم
+.DS_Store
+Thumbs.db
