@@ -181,7 +181,12 @@ async def add_panel(name: str, type_: str, base_url: str, sub_base_url: str,
         return cur.lastrowid
 
 
+PANEL_FIELDS = ("name", "type", "base_url", "username", "password",
+                "token", "inbound_id", "sub_base_url", "enabled")
+
+
 async def update_panel(panel_id: int, **fields) -> None:
+    fields = {k: v for k, v in fields.items() if k in PANEL_FIELDS}
     if not fields:
         return
     cols = ", ".join(f"{k}=?" for k in fields)

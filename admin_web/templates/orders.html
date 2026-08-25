@@ -1,35 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>سفارش‌ها</h2>
-{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
-<div style="margin-bottom:14px;display:flex;gap:8px;">
-  <a href="/orders"><button>همه</button></a>
+<h2 class="mb-3"><i class="bi bi-cart"></i> سفارش‌ها</h2>
+{% if msg %}<div class="alert alert-success alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
+
+<div class="btn-group mb-3">
+  <a href="/orders" class="btn btn-outline-secondary {% if not status %}active{% endif %}">همه</a>
   {% for s, label in status_labels %}
-  <a href="/orders?status={{ s }}"><button {% if status == s %}class="btn-primary"{% endif %}>{{ label }}</button></a>
+  <a href="/orders?status={{ s }}" class="btn btn-outline-secondary {% if status == s %}active{% endif %}">{{ label }}</a>
   {% endfor %}
 </div>
-<table>
-  <tr><th>#</th><th>کاربر</th><th>حجم</th><th>مدت</th><th>وضعیت</th><th>لینک</th><th>تاریخ</th><th>عملیات</th></tr>
-  {% for o in orders %}
-  <tr>
-    <td>{{ o.id }}</td>
-    <td>{{ o.full_name or "—" }}<br><code>{{ o.user_id }}</code></td>
-    <td><code>{{ o.volume_key }}</code></td>
-    <td><code>{{ o.duration_key }}</code></td>
-    <td>{{ o.status_label }}</td>
-    <td>{% if o.sub_url %}<code>{{ o.sub_url[:40] }}…</code>{% else %}—{% endif %}</td>
-    <td class="muted">{{ o.created_at[:16] if o.created_at else "—" }}</td>
-    <td>
-      {% if o.status == "awaiting_confirm" %}
-      <form class="inline" method="post" action="/orders/{{ o.id }}/approve">
-        <button class="btn-ok" type="submit">✅ تأیید</button>
-      </form>
-      <form class="inline" method="post" action="/orders/{{ o.id }}/reject">
-        <button class="btn-danger" type="submit">❌ رد</button>
-      </form>
-      {% endif %}
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+
+<div class="card shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead><tr><th>#</th><th>کاربر</th><th>حجم</th><th>مدت</th><th>وضعیت</th><th>لینک</th><th>تاریخ</th><th>عملیات</th></tr></thead>
+    <tbody>
+    {% for o in orders %}
+      <tr>
+        <td>{{ o.id }}</td>
+        <td>{{ o.full_name or "—" }}<br><code class="small">{{ o.user_id }}</code></td>
+        <td><code>{{ o.volume_key }}</code></td>
+        <td><code>{{ o.duration_key }}</code></td>
+        <td>{{ o.status_label }}</td>
+        <td>{% if o.sub_url %}<code class="small">{{ o.sub_url[:35] }}…</code>{% else %}—{% endif %}</td>
+        <td class="text-muted small">{{ o.created_at[:16] if o.created_at else "—" }}</td>
+        <td class="text-nowrap">
+          {% if o.status == "awaiting_confirm" %}
+          <form class="d-inline" method="post" action="/orders/{{ o.id }}/approve">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="btn btn-success btn-sm" type="submit"><i class="bi bi-check-lg"></i> تأیید</button>
+          </form>
+          <form class="d-inline" method="post" action="/orders/{{ o.id }}/reject">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="btn btn-danger btn-sm" type="submit"><i class="bi bi-x-lg"></i> رد</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

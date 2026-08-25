@@ -1,23 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>آمار کلی</h2>
-{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
-{% if err %}<div class="flash err">{{ err }}</div>{% endif %}
+<h2 class="mb-4"><i class="bi bi-bar-chart"></i> آمار کلی</h2>
+{% if msg %}<div class="alert alert-success alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
+{% if err %}<div class="alert alert-danger alert-dismissible">{{ err }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
 
-<div class="stats">
-  <div class="stat"><b>{{ stats.users }}</b>کاربران</div>
-  <div class="stat"><b>{{ stats.delivered }}</b>سفارش تحویل‌شده</div>
-  <div class="stat"><b>{{ stats.sales_today }}</b>فروش امروز</div>
-  <div class="stat"><b>{{ stats.pending }}</b>در انتظار تأیید</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card text-bg-primary h-100"><div class="card-body text-center"><h2>{{ stats.users }}</h2>کاربران</div></div></div>
+  <div class="col-md-3"><div class="card text-bg-success h-100"><div class="card-body text-center"><h2>{{ stats.delivered }}</h2>سفارش تحویل‌شده</div></div></div>
+  <div class="col-md-3"><div class="card text-bg-info h-100"><div class="card-body text-center"><h2>{{ stats.sales_today }}</h2>فروش امروز</div></div></div>
+  <div class="col-md-3"><div class="card text-bg-warning h-100"><div class="card-body text-center"><h2>{{ stats.pending }}</h2>در انتظار تأیید</div></div></div>
 </div>
 
-<div class="card" style="margin-top:22px;">
-  <h3>📢 پیام همگانی</h3>
-  <p class="muted">این پیام برای همه کاربران ربات ارسال می‌شود.</p>
-  <form method="post" action="/broadcast">
-    <textarea name="text" placeholder="متن پیام..." required></textarea>
-    <br><br>
-    <button class="btn-primary" type="submit">ارسال به همه</button>
-  </form>
+<div class="card shadow-sm">
+  <div class="card-header"><i class="bi bi-megaphone"></i> پیام همگانی</div>
+  <div class="card-body">
+    <p class="text-muted small">این پیام برای همه کاربران ربات ارسال می‌شود (حداکثر ۴۰۰۰ کاراکتر).</p>
+    <form method="post" action="/broadcast">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <textarea name="text" class="form-control mb-3" rows="4" maxlength="4000" required placeholder="متن پیام..."></textarea>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> ارسال به همه</button>
+    </form>
+  </div>
 </div>
 {% endblock %}

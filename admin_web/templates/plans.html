@@ -1,72 +1,89 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>پلن‌های فروش</h2>
-{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
+<h2 class="mb-3"><i class="bi bi-tags"></i> پلن‌های فروش</h2>
+{% if msg %}<div class="alert alert-success alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
 
-<div class="card">
-  <h3>📦 حجم‌ها</h3>
-  <table>
-    <tr><th>کلید</th><th>عنوان</th><th>گیگابایت (0=نامحدود)</th><th></th></tr>
-    {% for v in volumes %}
-    <tr>
-      <form method="post" action="/plans/volume">
-      <input type="hidden" name="key" value="{{ v.key }}">
-      <td><code>{{ v.key }}</code></td>
-      <td><input name="title" value="{{ v.title }}"></td>
-      <td><input name="gb" value="{{ v.gb }}" type="number"></td>
-      <td><button class="btn-primary" type="submit">ذخیره</button></td>
-      </form>
-      <td><a href="/plans-delete/volume?key={{ v.key }}"><button class="btn-danger">🗑</button></a></td>
-    </tr>
-    {% endfor %}
-    <tr style="background:#f9fafb;">
-      <form method="post" action="/plans/volume">
-      <td><input name="key" placeholder="vol_new"></td>
-      <td><input name="title" placeholder="عنوان جدید"></td>
-      <td><input name="gb" placeholder="50" type="number"></td>
-      <td><button class="btn-ok" type="submit">➕ افزودن</button></td>
-      </form>
-      <td></td>
-    </tr>
-  </table>
+<div class="card shadow-sm mb-4">
+  <div class="card-header"><i class="bi bi-box"></i> حجم‌ها</div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>کلید</th><th>عنوان</th><th>گیگابایت (0=نامحدود)</th><th></th></tr></thead>
+      <tbody>
+      {% for v in volumes %}
+        <tr>
+          <form method="post" action="/plans/volume" class="table-row">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="key" value="{{ v.key }}">
+          <td><code>{{ v.key }}</code></td>
+          <td><input name="title" value="{{ v.title }}" class="form-control form-control-sm"></td>
+          <td><input name="gb" value="{{ v.gb }}" type="number" class="form-control form-control-sm" style="max-width:110px;"></td>
+          <td class="text-nowrap">
+            <button class="btn btn-primary btn-sm" type="submit">ذخیره</button>
+            <button class="btn btn-danger btn-sm" type="submit" formaction="/plans-delete/volume"><i class="bi bi-trash"></i></button>
+          </td>
+          </form>
+        </tr>
+      {% endfor %}
+      <tr class="table-light">
+        <form method="post" action="/plans/volume">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <td><input name="key" placeholder="vol_100" class="form-control form-control-sm"></td>
+        <td><input name="title" placeholder="عنوان جدید" class="form-control form-control-sm"></td>
+        <td><input name="gb" placeholder="100" type="number" class="form-control form-control-sm" style="max-width:110px;"></td>
+        <td><button class="btn btn-success btn-sm" type="submit"><i class="bi bi-plus-lg"></i> افزودن</button></td>
+        </form>
+      </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="card">
-  <h3>⏳ مدت‌ها و قیمت‌ها</h3>
-  <table>
-    <tr><th>کلید</th><th>عنوان</th><th>روز</th><th>قیمت (تومان)</th><th></th></tr>
-    {% for d in durations %}
-    <tr>
-      <form method="post" action="/plans/duration">
-      <input type="hidden" name="key" value="{{ d.key }}">
-      <td><code>{{ d.key }}</code></td>
-      <td><input name="title" value="{{ d.title }}"></td>
-      <td><input name="days" value="{{ d.days }}" type="number"></td>
-      <td><input name="price" value="{{ d.price }}" type="number"></td>
-      <td><button class="btn-primary" type="submit">ذخیره</button></td>
-      </form>
-      <td><a href="/plans-delete/duration?key={{ d.key }}"><button class="btn-danger">🗑</button></a></td>
-    </tr>
-    {% endfor %}
-    <tr style="background:#f9fafb;">
-      <form method="post" action="/plans/duration">
-      <td><input name="key" placeholder="dur_45"></td>
-      <td><input name="title" placeholder="عنوان جدید"></td>
-      <td><input name="days" placeholder="45" type="number"></td>
-      <td><input name="price" placeholder="120000" type="number"></td>
-      <td><button class="btn-ok" type="submit">➕ افزودن</button></td>
-      </form>
-      <td></td>
-    </tr>
-  </table>
+<div class="card shadow-sm mb-4">
+  <div class="card-header"><i class="bi bi-clock-history"></i> مدت‌ها و قیمت‌ها (تومان)</div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>کلید</th><th>عنوان</th><th>روز</th><th>قیمت</th><th></th></tr></thead>
+      <tbody>
+      {% for d in durations %}
+        <tr>
+          <form method="post" action="/plans/duration" class="table-row">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="key" value="{{ d.key }}">
+          <td><code>{{ d.key }}</code></td>
+          <td><input name="title" value="{{ d.title }}" class="form-control form-control-sm"></td>
+          <td><input name="days" value="{{ d.days }}" type="number" class="form-control form-control-sm" style="max-width:90px;"></td>
+          <td><input name="price" value="{{ d.price }}" type="number" class="form-control form-control-sm" style="max-width:130px;"></td>
+          <td class="text-nowrap">
+            <button class="btn btn-primary btn-sm" type="submit">ذخیره</button>
+            <button class="btn btn-danger btn-sm" type="submit" formaction="/plans-delete/duration"><i class="bi bi-trash"></i></button>
+          </td>
+          </form>
+        </tr>
+      {% endfor %}
+      <tr class="table-light">
+        <form method="post" action="/plans/duration">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <td><input name="key" placeholder="dur_45" class="form-control form-control-sm"></td>
+        <td><input name="title" placeholder="عنوان جدید" class="form-control form-control-sm"></td>
+        <td><input name="days" placeholder="45" type="number" class="form-control form-control-sm" style="max-width:90px;"></td>
+        <td><input name="price" placeholder="120000" type="number" class="form-control form-control-sm" style="max-width:130px;"></td>
+        <td><button class="btn btn-success btn-sm" type="submit"><i class="bi bi-plus-lg"></i> افزودن</button></td>
+        </form>
+      </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="card">
-  <h3>♾ قیمت روزانه پلن نامحدود</h3>
-  <p class="muted">قیمت پلن نامحدود = این عدد × تعداد روز.</p>
-  <form method="post" action="/plans-unlimited" style="display:flex;gap:8px;max-width:320px;">
-    <input name="price" value="{{ unlimited_price }}" type="number">
-    <button class="btn-primary" type="submit">ذخیره</button>
-  </form>
+<div class="card shadow-sm">
+  <div class="card-header"><i class="bi bi-infinity"></i> قیمت روزانه پلن نامحدود</div>
+  <div class="card-body">
+    <p class="text-muted small mb-2">قیمت پلن نامحدود = این عدد × تعداد روز.</p>
+    <form method="post" action="/plans-unlimited" class="d-flex gap-2" style="max-width:320px;">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input name="price" value="{{ unlimited_price }}" type="number" class="form-control">
+      <button class="btn btn-primary" type="submit">ذخیره</button>
+    </form>
+  </div>
 </div>
 {% endblock %}

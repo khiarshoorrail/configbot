@@ -1,61 +1,78 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>پنل‌های v2ray متصل</h2>
-{% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
-{% if tested %}<div class="flash err">🔌 تست: {{ tested }}</div>{% endif %}
+<h2 class="mb-3"><i class="bi bi-hdd-network"></i> پنل‌های v2ray متصل</h2>
+{% if msg %}<div class="alert alert-success alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
+{% if tested %}<div class="alert alert-warning alert-dismissible"><i class="bi bi-plug"></i> {{ tested }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
 
-<table>
-  <tr><th>#</th><th>نام</th><th>نوع</th><th>آدرس</th><th>اینباند</th><th>وضعیت</th><th>عملیات</th></tr>
-  {% for p in panels %}
-  <tr>
-    <td>{{ p.id }}</td>
-    <td>{{ p.name }}</td>
-    <td>{{ "3x-ui" if p.type == "xui" else "Marzban" }}</td>
-    <td><code>{{ p.base_url[:35] }}…</code></td>
-    <td>{{ p.inbound_id or "—" }}</td>
-    <td>{{ "🟢 فعال" if p.enabled else "🔴 غیرفعال" }}</td>
-    <td>
-      <form class="inline" method="post" action="/panels/{{ p.id }}/toggle">
-        <button type="submit">{{ "🚫 غیرفعال" if p.enabled else "✅ فعال" }}</button>
-      </form>
-      <a href="/panels/{{ p.id }}/test"><button class="btn-warn">🔌 تست</button></a>
-      <form class="inline" method="post" action="/panels/{{ p.id }}/delete">
-        <button class="btn-danger" type="submit">🗑</button>
-      </form>
-    </td>
-  </tr>
-  <tr>
-    <td></td>
-    <td colspan="6">
-      <form method="post" action="/panels/{{ p.id }}/edit" style="display:flex;gap:6px;flex-wrap:wrap;">
-        <input name="name" value="{{ p.name }}" style="max-width:130px;">
-        <input name="base_url" value="{{ p.base_url }}" style="max-width:230px;">
-        <input name="username" value="{{ p.username or '' }}" placeholder="یوزر" style="max-width:90px;">
-        <input name="password" value="{{ p.password or '' }}" placeholder="رمز" style="max-width:110px;">
-        <input name="inbound_id" value="{{ p.inbound_id or '' }}" placeholder="اینباند" style="max-width:70px;" type="number">
-        <input name="sub_base_url" value="{{ p.sub_base_url }}" placeholder="آدرس اشتراک" style="max-width:210px;">
-        <button class="btn-primary" type="submit">ویرایش</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+<div class="card shadow-sm mb-4">
+  <table class="table table-hover align-middle mb-0">
+    <thead><tr><th>#</th><th>نام</th><th>نوع</th><th>آدرس</th><th>اینباند</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+    <tbody>
+    {% for p in panels %}
+      <tr>
+        <td>{{ p.id }}</td>
+        <td>{{ p.name }}</td>
+        <td><span class="badge {% if p.type == 'xui' %}bg-info text-dark{% else %}bg-secondary{% endif %}">{{ "3x-ui" if p.type == "xui" else "Marzban" }}</span></td>
+        <td><code class="small">{{ p.base_url[:35] }}…</code></td>
+        <td>{{ p.inbound_id or "—" }}</td>
+        <td>{% if p.enabled %}<span class="badge bg-success">فعال</span>{% else %}<span class="badge bg-danger">غیرفعال</span>{% endif %}</td>
+        <td class="text-nowrap">
+          <form class="d-inline" method="post" action="/panels/{{ p.id }}/toggle">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="btn btn-outline-secondary btn-sm" type="submit">{{ "🚫 غیرفعال" if p.enabled else "✅ فعال" }}</button>
+          </form>
+          <form class="d-inline" method="post" action="/panels/{{ p.id }}/test">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="btn btn-warning btn-sm" type="submit"><i class="bi bi-plug"></i> تست</button>
+          </form>
+          <form class="d-inline" method="post" action="/panels/{{ p.id }}/delete">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="btn btn-danger btn-sm" type="submit"><i class="bi bi-trash"></i></button>
+          </form>
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td colspan="6">
+          <form method="post" action="/panels/{{ p.id }}/edit" class="row g-1">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <div class="col-md-2"><input name="name" value="{{ p.name }}" class="form-control form-control-sm" placeholder="نام"></div>
+            <div class="col-md-3"><input name="base_url" value="{{ p.base_url }}" class="form-control form-control-sm" placeholder="آدرس پنل"></div>
+            <div class="col-md-2"><input name="username" value="{{ p.username or '' }}" class="form-control form-control-sm" placeholder="یوزر"></div>
+            <div class="col-md-2"><input name="password" value="{{ p.password or '' }}" class="form-control form-control-sm" placeholder="رمز"></div>
+            <div class="col-md-1"><input name="inbound_id" value="{{ p.inbound_id or '' }}" class="form-control form-control-sm" placeholder="ID" type="number"></div>
+            <div class="col-auto"><button class="btn btn-primary btn-sm w-100" type="submit">ویرایش</button></div>
+            <div class="col-md-3 mt-1"><input name="sub_base_url" value="{{ p.sub_base_url }}" class="form-control form-control-sm" placeholder="آدرس اشتراک"></div>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
 
-<div class="card" style="margin-top:20px;">
-  <h3>➕ افزودن پنل جدید</h3>
-  <p class="muted">راهنمای کامل در فایل PANELS_GUIDE.md پروژه.</p>
-  <form method="post" action="/panels/add" style="display:flex;gap:8px;flex-wrap:wrap;">
-    <select name="type" style="max-width:110px;">
-      <option value="xui">3x-ui</option>
-      <option value="marzban">Marzban</option>
-    </select>
-    <input name="name" placeholder="نام (مثلاً سرور آلمان)" style="max-width:150px;">
-    <input name="base_url" placeholder="https://panel.example.com:2053" style="max-width:250px;">
-    <input name="username" placeholder="یوزرنیم ادمین" style="max-width:130px;">
-    <input name="password" placeholder="رمز ادمین" style="max-width:140px;">
-    <input name="inbound_id" placeholder="اینباند (3x-ui)" style="max-width:120px;" type="number">
-    <input name="sub_base_url" placeholder="https://sub.example.com" style="max-width:220px;">
-    <button class="btn-ok" type="submit">افزودن + تست</button>
-  </form>
+<div class="card shadow-sm">
+  <div class="card-header"><i class="bi bi-plus-circle"></i> افزودن پنل جدید</div>
+  <div class="card-body">
+    <p class="text-muted small">راهنمای کامل در فایل PANELS_GUIDE.md پروژه. بعد از افزودن، اتصال خودکار تست می‌شود.</p>
+    <form method="post" action="/panels/add" class="row g-2">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div class="col-md-2">
+        <select name="type" class="form-select form-select-sm">
+          <option value="xui">3x-ui</option>
+          <option value="marzban">Marzban</option>
+        </select>
+      </div>
+      <div class="col-md-2"><input name="name" class="form-control form-control-sm" placeholder="نام (سرور آلمان)" required></div>
+      <div class="col-md-3"><input name="base_url" class="form-control form-control-sm" placeholder="https://panel.example.com:2053" required></div>
+      <div class="col-md-2"><input name="username" class="form-control form-control-sm" placeholder="یوزرنیم ادمین"></div>
+      <div class="col-md-2"><input name="password" class="form-control form-control-sm" placeholder="رمز ادمین"></div>
+      <div class="col-md-2"><input name="inbound_id" class="form-control form-control-sm" placeholder="اینباند ID (3x-ui)" type="number"></div>
+      <div class="col-md-3"><input name="sub_base_url" class="form-control form-control-sm" placeholder="https://sub.example.com" required></div>
+      <div class="col-auto">
+        <button class="btn btn-success btn-sm" type="submit"><i class="bi bi-plus-lg"></i> افزودن + تست اتصال</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
