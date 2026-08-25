@@ -131,7 +131,7 @@ async def approve_order(cb: CallbackQuery, bot: Bot) -> None:
     dur = plans.DURATIONS[order["duration_key"]]
 
     try:
-        sub_url, panel_name = await create_config_on_any_panel(gb_to_bytes(vol["gb"]), dur["months"] * 30)
+        sub_url, panel_name = await create_config_on_any_panel(gb_to_bytes(vol["gb"]), dur["days"])
     except AllPanelsFailedError as e:
         log.error("all panels failed for order %s: %s", order_id, e)
         await cb.message.edit_reply_markup(reply_markup=None)

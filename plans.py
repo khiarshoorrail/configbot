@@ -1,4 +1,4 @@
-# پلن‌های فروش: کلید = (حجم گیگ، مدت ماه)
+# پلن‌های فروش: کلید = (حجم گیگ، مدت روز)
 # 0-گیگ یعنی نامحدود. قیمت‌ها تومان هستند؛ اینجا راحت تغییر بده.
 
 VOLUMES = {
@@ -8,20 +8,21 @@ VOLUMES = {
     "vol_unlimited": {"title": "نامحدود", "gb": 0},
 }
 
+# حداکثر مدت مجاز: ۳۰ روز
 DURATIONS = {
-    "dur_1": {"title": "۱ ماهه", "months": 1, "price": 90000},
-    "dur_2": {"title": "۲ ماهه", "months": 2, "price": 160000},
-    "dur_3": {"title": "۳ ماهه", "months": 3, "price": 210000},
+    "dur_10": {"title": "۱۰ روزه", "days": 10, "price": 35000},
+    "dur_20": {"title": "۲۰ روزه", "days": 20, "price": 60000},
+    "dur_30": {"title": "۱ ماهه (۳۰ روز)", "days": 30, "price": 90000},
 }
 
-PRICE_PER_UNLIMITED_MONTH = 150000
+PRICE_PER_UNLIMITED_DAY = 5000
 
 
 def get_price(volume_key: str, duration_key: str) -> int:
     vol = VOLUMES[volume_key]
     dur = DURATIONS[duration_key]
     if vol["gb"] == 0:
-        return PRICE_PER_UNLIMITED_MONTH * dur["months"]
+        return PRICE_PER_UNLIMITED_DAY * dur["days"]
     return dur["price"]
 
 
