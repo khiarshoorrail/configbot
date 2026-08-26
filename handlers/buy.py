@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
+import app_settings
 import config
 import database
 import plans
@@ -15,7 +16,7 @@ import texts
 from keyboards import (
     cancel_menu,
     durations_kb,
-    main_menu,
+    main_menu_for,
     receipt_actions,
     volumes_kb,
 )
@@ -39,7 +40,7 @@ async def start_buy(message: Message, state: FSMContext) -> None:
 @router.message(F.text == texts.BTN_CANCEL)
 async def cancel(message: Message, state: FSMContext) -> None:
     await state.clear()
-    await message.answer(texts.MAIN_MENU.strip(), reply_markup=main_menu())
+    await message.answer(texts.MAIN_MENU.strip(), reply_markup=main_menu_for(message.from_user.id))
 
 
 @router.callback_query(BuyStates.choosing_volume, F.data.startswith("vol:"))
@@ -74,9 +75,12 @@ async def pick_duration(cb: CallbackQuery, state: FSMContext) -> None:
     code = f"ORD-{order_id:04d}"
     await state.update_data(order_id=order_id, order_code=code)
 
+    payment_template = await app_settings.text("txt_payment_info")
     await cb.message.edit_text(
-        texts.PAYMENT_INFO.format(
-            summary=summary, price=price, card=config.CARD_NUMBER, holder=config.CARD_HOLDER
+        payment_template.format(
+            summary=summary, price=price,
+            card=await app_settings.card_number(),
+            holder=await app_settings.card_holder(),
         )
         + "\n\n"
         + texts.ORDER_CODE.format(code=code),
@@ -91,7 +95,7 @@ async def receive_receipt(message: Message, state: FSMContext, bot: Bot) -> None
     order_id = data.get("order_id")
     if not order_id:
         await state.clear()
-        await message.answer(texts.MAIN_MENU.strip(), reply_markup=main_menu())
+        await message.answer(texts.MAIN_MENU.strip(), reply_markup=main_menu_for(message.from_user.id))
         return
 
     from handlers.chat import build_user_header
@@ -117,7 +121,7 @@ async def receive_receipt(message: Message, state: FSMContext, bot: Bot) -> None
 
     await message.answer(texts.RECEIPT_RECEIVED)
     await state.clear()
-    await message.answer(texts.MAIN_MENU.strip(), reply_markup=main_menu())
+    await message.answer(texts.MAIN_MENU.strip(), reply_markup=main_menu_for(message.from_user.id))
 
 
 @router.callback_query(F.data.startswith("approve:"))

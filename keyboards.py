@@ -1,3 +1,5 @@
+import config
+
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -12,6 +14,11 @@ def main_menu(admin_menu: bool = False) -> ReplyKeyboardMarkup:
         keyboard=[[KeyboardButton(text=b) for b in row] for row in rows],
         resize_keyboard=True,
     )
+
+
+def main_menu_for(user_id: int) -> ReplyKeyboardMarkup:
+    """منوی اصلی با تشخیص خودکار ادمین — همه‌جا از این استفاده شود."""
+    return main_menu(admin_menu=user_id == config.ADMIN_ID)
 
 
 def chat_menu() -> ReplyKeyboardMarkup:

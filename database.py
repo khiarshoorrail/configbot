@@ -355,3 +355,17 @@ async def get_all_user_ids():
     async with aiosqlite.connect(config.DATABASE_PATH) as db:
         rows = await db.execute_fetchall("SELECT user_id FROM users")
         return [r[0] for r in rows]
+
+
+async def latest_orders(limit: int = 5):
+    async with aiosqlite.connect(config.DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            """
+            SELECT o.*, u.full_name, u.username FROM orders o
+            LEFT JOIN users u ON u.user_id=o.user_id
+            ORDER BY o.id DESC LIMIT ?
+            """,
+            (limit,),
+        )
+        return [dict(r) for r in rows]

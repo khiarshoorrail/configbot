@@ -50,6 +50,7 @@ def _form(request: web.Request) -> dict:
 def render(request: web.Request, template: str, **ctx) -> web.Response:
     ctx.setdefault("password_enabled", bool(config.ADMIN_WEB_PASSWORD))
     ctx.setdefault("csrf", auth.get_csrf(request.cookies.get("admin_session")))
+    ctx.setdefault("request", request)
     html = env.get_template(template).render(**ctx)
     return web.Response(text=html, content_type="text/html")
 
@@ -84,11 +85,38 @@ async def logout(request: web.Request) -> web.Response:
     return resp
 
 
+def render(request: web.Request, template: str, **ctx) -> web.Response:
+    status = ctx.pop("_status", 200)
+    ctx.setdefault("password_enabled", bool(config.ADMIN_WEB_PASSWORD))
+    ctx.setdefault("csrf", auth.get_csrf(request.cookies.get("admin_session")))
+    ctx.setdefault("request", request)
+    html = env.get_template(template).render(**ctx)
+    return web.Response(text=html, content_type="text/html", status=status)
+
+
+async def magic_login(request: web.Request) -> web.Response:
+    """ورود ادمین با لینک یک‌بارمصرف از تلگرام."""
+    token = request.match_info.get("token", "")
+    if not auth.consume_magic_token(token):
+        return render(request, "magic_invalid.html", _status=403)
+    session_token, _csrf = auth.create_session()
+    resp = web.HTTPFound("/")
+    resp.set_cookie("admin_session", session_token, httponly=True, samesite="Lax",
+                    secure=True, max_age=auth.SESSION_TTL)
+    log.info("admin logged in via telegram magic link")
+    return resp
+
+
 async def dashboard(request: web.Request) -> web.Response:
     stats = await database.stats_overview()
+    recent = []
+    for o in await database.latest_orders(5):
+        o = dict(o)
+        o["status_label"] = STATUS_LABELS.get(o["status"], o["status"])
+        recent.append(o)
     msg = request.query.get("msg", "")
     err = request.query.get("err", "")
-    return render(request, "dashboard.html", stats=stats, msg=msg, err=err)
+    return render(request, "dashboard.html", stats=stats, recent=recent, msg=msg, err=err)
 
 
 async def broadcast(request: web.Request) -> web.Response:
@@ -216,6 +244,65 @@ async def panels_page(request: web.Request) -> web.Response:
     return render(request, "panels.html", panels=panels, msg=msg, tested=tested)
 
 
+# --- تنظیمات ---
+
+async def settings_page(request: web.Request) -> web.Response:
+    import app_settings
+
+    data = {
+        "card_number": await app_settings.card_number(),
+        "card_holder": await app_settings.card_holder(),
+        "referral_target": await app_settings.referral_target(),
+        "referral_reward_gb": await app_settings.reward_gb(),
+        "referral_reward_days": await app_settings.reward_days(),
+        "support_contact": await app_settings.support_contact(),
+        "panel_base_url": await app_settings.panel_base_url(),
+    }
+    texts_map = await app_settings.all_texts()
+    msg = request.query.get("msg", "")
+    return render(request, "settings.html", settings=data, bot_texts=texts_map,
+                  text_fallbacks=app_settings._TEXT_FALLBACKS, msg=msg)
+
+
+async def settings_save(request: web.Request) -> web.Response:
+    import app_settings
+
+    form = _form(request)
+    errors = []
+
+    card_num = str(form.get("card_number", "")).strip()[:40]
+    card_hold = str(form.get("card_holder", "")).strip()[:80]
+    if not card_num or not card_hold:
+        errors.append("شماره کارت و نام صاحب حساب الزامی است.")
+
+    target = _safe_int(form.get("referral_target"), 10)
+    gb = _safe_int(form.get("referral_reward_gb"), 5)
+    days = _safe_int(form.get("referral_reward_days"), 30)
+    if min(target, max(days, 1)) <= 0 or target < 1:
+        errors.append("مقادیر رفرال نامعتبر است.")
+
+    support = str(form.get("support_contact", "")).strip()[:200]
+    base_url = str(form.get("panel_base_url", "")).strip().rstrip("/")[:300]
+    if base_url and not base_url.startswith(("http://", "https://")):
+        errors.append("دامنه پنل باید با http:// یا https:// شروع شود.")
+
+    if errors:
+        _flash("/settings", " | ".join(errors), err=True)
+
+    await app_settings.save_payment(card_num, card_hold)
+    await app_settings.save_referral(target, gb, days)
+    await app_settings.save_support(support, base_url)
+
+    for key in app_settings.TEXT_KEYS:
+        val = str(form.get(key, "")).strip()
+        if val:
+            await app_settings.save_text(key, val)
+
+    app_settings.invalidate_cache()
+    log.info("settings updated via web panel")
+    _flash("/settings", "تنظیمات ذخیره شد ✅")
+
+
 async def panel_add(request: web.Request) -> web.Response:
     form = _form(request)
     name = str(form.get("name", "")).strip()[:60]
@@ -295,6 +382,7 @@ async def panel_test(request: web.Request) -> web.Response:
 def setup_routes(app: web.Application) -> None:
     app.router.add_get("/login", login_page)
     app.router.add_post("/login", login_post)
+    app.router.add_get("/login/tk/{token}", magic_login)
     app.router.add_post("/logout", logout)
     app.router.add_get("/", dashboard)
     app.router.add_post("/broadcast", broadcast)
@@ -306,6 +394,8 @@ def setup_routes(app: web.Application) -> None:
     app.router.add_post("/plans-unlimited", unlimited_price_save)
     app.router.add_post("/plans-delete/{kind}", plan_delete)
     app.router.add_get("/panels", panels_page)
+    app.router.add_get("/settings", settings_page)
+    app.router.add_post("/settings/save", settings_save)
     app.router.add_post("/panels/add", panel_add)
     app.router.add_post("/panels/{panel_id}/edit", panel_edit)
     app.router.add_post("/panels/{panel_id}/delete", panel_delete)

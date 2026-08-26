@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3"><i class="bi bi-gear"></i> تنظیمات ربات</h2>
+{% if msg %}<div class="alert alert-success alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
+
+<form method="post" action="/settings/save">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header"><i class="bi bi-credit-card"></i> پرداخت</div>
+    <div class="card-body row g-3">
+      <div class="col-md-6">
+        <label class="form-label">شماره کارت (به خریدار نمایش داده می‌شود)</label>
+        <input name="card_number" value="{{ settings.card_number }}" class="form-control" style="direction:ltr;">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">نام صاحب حساب</label>
+        <input name="card_holder" value="{{ settings.card_holder }}" class="form-control">
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header"><i class="bi bi-gift"></i> معرفی دوستان (جایزه)</div>
+    <div class="card-body row g-3">
+      <div class="col-md-4">
+        <label class="form-label">تعداد دعوت لازم</label>
+        <input name="referral_target" value="{{ settings.referral_target }}" type="number" min="1" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">حجم هدیه (گیگ)</label>
+        <input name="referral_reward_gb" value="{{ settings.referral_reward_gb }}" type="number" min="0" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">مدت هدیه (روز، حداکثر ۳۰)</label>
+        <input name="referral_reward_days" value="{{ settings.referral_reward_days }}" type="number" min="1" max="30" class="form-control">
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header"><i class="bi bi-headset"></i> پشتیبانی و دامنه پنل</div>
+    <div class="card-body row g-3">
+      <div class="col-md-6">
+        <label class="form-label">راه ارتباطی پشتیبانی (در پیام‌ها نمایش داده می‌شود)</label>
+        <input name="support_contact" value="{{ settings.support_contact }}" class="form-control">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">دامنه وب‌پنل (برای لینک ورود تلگرامی)</label>
+        <input name="panel_base_url" value="{{ settings.panel_base_url }}" class="form-control" placeholder="https://your-app.up.railway.app" style="direction:ltr;">
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header"><i class="bi bi-chat-left-text"></i> متن‌های ربات</div>
+    <div class="card-body">
+      {% for key, fallback in text_fallbacks.items() %}
+      <div class="mb-3">
+        <label class="form-label fw-bold">{{ key }}</label>
+        <textarea name="{{ key }}" class="form-control" rows="4" placeholder="{{ fallback[:200] }}">{{ bot_texts[key] if bot_texts[key] != fallback else '' }}</textarea>
+        <div class="form-text">
+          {% if key == 'txt_welcome' %}متغیرها: {name} — اگر خالی بمانی متن پیش‌فرض استفاده می‌شود
+          {% elif key == 'txt_payment_info' %}متغیرها: {summary} {price} {card} {holder}
+          {% elif key == 'txt_order_confirmed' %}متغیرها: {sub_url}
+          {% elif key == 'txt_order_rejected' %}بدون متغیر
+          {% elif key == 'txt_referral_info' %}متغیرها: {link} {count} {target} {bar} {gb} {days}{% endif %}
+          — خالی = پیش‌فرض
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-save"></i> ذخیره همه تنظیمات</button>
+</form>
+{% endblock %}

@@ -9,7 +9,7 @@ from aiogram.types import Message
 
 import config
 import texts
-from keyboards import chat_menu, main_menu
+from keyboards import chat_menu, main_menu_for
 
 router = Router()
 log = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ async def start_chat(message: Message, state: FSMContext) -> None:
 @router.message(F.text == texts.BTN_END_CHAT)
 async def end_chat(message: Message, state: FSMContext, bot: Bot) -> None:
     await state.clear()
-    await message.answer(texts.CHAT_ENDED_USER, reply_markup=main_menu())
+    await message.answer(texts.CHAT_ENDED_USER, reply_markup=main_menu_for(message.from_user.id))
     try:
         await bot.send_message(config.ADMIN_ID, texts.USER_LEFT + f" #{message.from_user.id}")
     except Exception:

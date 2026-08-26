@@ -93,7 +93,37 @@ async def btn_panels(message: Message, state: FSMContext) -> None:
         await message.answer(texts.ADMIN_ONLY)
         return
     await state.clear()
-    await show_panels(message)
+
+    # لینک یک‌بارمصرف ورود به وب‌پنل
+    import app_settings
+    from admin_web.server import create_magic_token
+
+    base_url = await app_settings.panel_base_url()
+    if not base_url:
+        await message.answer(
+            "🔗 دامنه وب‌پنل هنوز ثبت نشده.\n"
+            "اول از تب «⚙️ تنظیمات» وب‌پنل (یا متغیر env) آدرس دامنه را ثبت کن، "
+            "بعد اینجا دوباره بزن تا لینک ورود مستقیم بگیری."
+        )
+        await show_panels(message)
+        return
+
+    token = create_magic_token()
+    if not token:
+        await message.answer("⚠️ چند لینک فعال داری؛ ۵ دقیقه صبر کن یا یکی را استفاده کن.")
+        return
+
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🖥 ورود به وب‌پنل", url=f"{base_url}/login/tk/{token}")
+    kb.adjust(1)
+    await message.answer(
+        "✨ روی دکمه زیر بزن تا بدون رمز وارد وب‌پنل شوی.\n"
+        "⏳ این لینک فقط ۵ دقیقه و فقط یک بار کار می‌کند.",
+        reply_markup=kb.as_markup(),
+    )
+    await state.set_state(None)
 
 
 @router.callback_query(F.data == "panels")

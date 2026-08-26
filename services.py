@@ -2,9 +2,9 @@ import logging
 
 from aiogram import Bot
 
+import app_settings
 import database
 import plans
-import texts
 from panels_api import AllPanelsFailedError, create_config_on_any_panel, gb_to_bytes
 
 log = logging.getLogger(__name__)
@@ -34,8 +34,9 @@ async def approve_order_core(bot: Bot, order_id: int) -> str:
 
     await database.set_order_status(order_id, "delivered", sub_url)
 
+    confirmed_template = await app_settings.text("txt_order_confirmed")
     try:
-        await bot.send_message(order["user_id"], texts.ORDER_CONFIRMED.format(sub_url=sub_url))
+        await bot.send_message(order["user_id"], confirmed_template.format(sub_url=sub_url))
     except Exception:
         log.exception("could not deliver to user %s", order["user_id"])
 
@@ -47,8 +48,9 @@ async def reject_order_core(bot: Bot, order_id: int) -> str:
     if not order or order["status"] != "awaiting_confirm":
         return "already"
     await database.set_order_status(order_id, "rejected")
+    rejected_template = await app_settings.text("txt_order_rejected")
     try:
-        await bot.send_message(order["user_id"], texts.ORDER_REJECTED)
+        await bot.send_message(order["user_id"], rejected_template)
     except Exception:
         log.exception("could not notify user %s", order["user_id"])
     return "ok"

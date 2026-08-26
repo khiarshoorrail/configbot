@@ -21,6 +21,11 @@ LOGIN_FAILURES: dict[str, list[float]] = {}
 MAX_FAILURES = 5
 FAILURE_WINDOW = 600
 
+# توکن‌های یک‌بارمصرف ورود از تلگرام: token → expires
+MAGIC_TOKENS: dict[str, float] = {}
+MAGIC_TTL = 300
+MAX_MAGIC_TOKENS = 3
+
 SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
@@ -65,6 +70,10 @@ async def security_middleware(request: web.Request, handler):
 @web.middleware
 async def auth_middleware(request: web.Request, handler):
     path = request.path
+
+    # لینک یک‌بارمصرف تلگرامی — عمومی
+    if path.startswith("/login/tk/"):
+        return await handler(request)
 
     # CSRF برای همه POST های احرازشده (به‌جز خود login)
     if request.method == "POST" and path not in PUBLIC_PATHS:
@@ -143,3 +152,19 @@ def end_session(token: str | None) -> None:
 
 def check_password(password: str) -> bool:
     return bool(config.ADMIN_WEB_PASSWORD) and secrets.compare_digest(password, config.ADMIN_WEB_PASSWORD)
+
+
+def create_magic_token() -> str | None:
+    """توکن یک‌بارمصرف ورود (۵ دقیقه)؛ سقف ۳ توکن باز."""
+    _cleanup()
+    if len(MAGIC_TOKENS) >= MAX_MAGIC_TOKENS:
+        return None
+    token = secrets.token_hex(32)
+    MAGIC_TOKENS[token] = time.time() + MAGIC_TTL
+    return token
+
+
+def consume_magic_token(token: str) -> bool:
+    _cleanup()
+    expires = MAGIC_TOKENS.pop(token, None)
+    return bool(expires and expires >= time.time())
