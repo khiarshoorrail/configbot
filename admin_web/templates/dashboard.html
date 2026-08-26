@@ -1,18 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-bar-chart"></i> آمار کلی</h2>
-{% if msg %}<div class="alert alert-success alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
-{% if err %}<div class="alert alert-danger alert-dismissible">{{ err }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
+<div class="page-title"><i class="bi bi-grid-1x2"></i> داشبورد</div>
+{% if msg %}<div class="alert alert-success alert-dismissible shadow-sm">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
+{% if err %}<div class="alert alert-danger alert-dismissible shadow-sm">{{ err }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
 
 <div class="row g-3 mb-4">
-  <div class="col-md-3"><div class="card text-bg-primary h-100"><div class="card-body text-center"><h2>{{ stats.users }}</h2>کاربران</div></div></div>
-  <div class="col-md-3"><div class="card text-bg-success h-100"><div class="card-body text-center"><h2>{{ stats.delivered }}</h2>سفارش تحویل‌شده</div></div></div>
-  <div class="col-md-3"><div class="card text-bg-info h-100"><div class="card-body text-center"><h2>{{ stats.sales_today }}</h2>فروش امروز</div></div></div>
-  <div class="col-md-3"><div class="card text-bg-warning h-100"><div class="card-body text-center"><h2>{{ stats.pending }}</h2>در انتظار تأیید</div></div></div>
+  <div class="col-md-3">
+    <div class="stat-card stat-blue">
+      <i class="bi bi-people icon"></i>
+      <h2>{{ stats.users }}</h2><small>کاربران</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card stat-green">
+      <i class="bi bi-check2-circle icon"></i>
+      <h2>{{ stats.delivered }}</h2><small>سفارش تحویل‌شده</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card stat-teal">
+      <i class="bi bi-graph-up-arrow icon"></i>
+      <h2>{{ stats.sales_today }}</h2><small>فروش امروز</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card stat-orange">
+      <i class="bi bi-hourglass-split icon"></i>
+      <h2>{{ stats.pending }}</h2><small>در انتظار تأیید</small>
+    </div>
+  </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-  <div class="card-header"><i class="bi bi-clock-history"></i> آخرین سفارش‌ها</div>
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history text-primary"></i> آخرین سفارش‌ها</span>
+    <a href="/orders" class="btn btn-sm btn-outline-primary">همه سفارش‌ها</a>
+  </div>
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
       <thead><tr><th>#</th><th>کاربر</th><th>وضعیت</th><th>تاریخ</th></tr></thead>
@@ -20,7 +43,7 @@
       {% for o in recent %}
         <tr>
           <td>{{ o.id }}</td>
-          <td>{{ o.full_name or "—" }} <code class="small">{{ o.user_id }}</code></td>
+          <td>{{ o.full_name or "—" }} <code>{{ o.user_id }}</code></td>
           <td>{{ o.status_label }}</td>
           <td class="text-muted small">{{ o.created_at[:16] if o.created_at else "—" }}</td>
         </tr>
@@ -30,8 +53,8 @@
   </div>
 </div>
 
-<div class="card shadow-sm">
-  <div class="card-header"><i class="bi bi-megaphone"></i> پیام همگانی</div>
+<div class="card">
+  <div class="card-header"><i class="bi bi-megaphone text-primary"></i> پیام همگانی</div>
   <div class="card-body">
     <p class="text-muted small">این پیام برای همه کاربران ربات ارسال می‌شود (حداکثر ۴۰۰۰ کاراکتر).</p>
     <form method="post" action="/broadcast">

@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="mb-3"><i class="bi bi-cart"></i> سفارش‌ها</h2>
-{% if msg %}<div class="alert alert-success alert-dismissible">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
+<div class="page-title"><i class="bi bi-cart3"></i> سفارش‌ها</div>
+{% if msg %}<div class="alert alert-success alert-dismissible shadow-sm">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}
 
-<div class="btn-group mb-3">
-  <a href="/orders" class="btn btn-outline-secondary {% if not status %}active{% endif %}">همه</a>
+<div class="btn-group mb-3 shadow-sm">
+  <a href="/orders" class="btn {% if not status %}btn-primary{% else %}btn-light{% endif %}">همه</a>
   {% for s, label in status_labels %}
-  <a href="/orders?status={{ s }}" class="btn btn-outline-secondary {% if status == s %}active{% endif %}">{{ label }}</a>
+  <a href="/orders?status={{ s }}" class="btn {% if status == s %}btn-primary{% else %}btn-light{% endif %}">{{ label }}</a>
   {% endfor %}
 </div>
 
-<div class="card shadow-sm">
+<div class="card">
+  <div class="table-responsive">
   <table class="table table-hover align-middle mb-0">
     <thead><tr><th>#</th><th>کاربر</th><th>حجم</th><th>مدت</th><th>وضعیت</th><th>لینک</th><th>تاریخ</th><th>عملیات</th></tr></thead>
     <tbody>
@@ -39,5 +40,6 @@
     {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endblock %}

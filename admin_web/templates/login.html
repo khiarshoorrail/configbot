@@ -2,15 +2,16 @@
 {% block content %}
 <div class="row justify-content-center mt-5">
   <div class="col-md-4">
-    <div class="card shadow">
-      <div class="card-body">
-        <h4 class="card-title text-center mb-3"><i class="bi bi-shield-lock"></i> ورود ادمین</h4>
-        {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+    <div class="card text-center" style="border-radius:20px;">
+      <div class="card-body p-5">
+        <i class="bi bi-shield-lock display-3 text-primary"></i>
+        <h4 class="mt-3 mb-4 fw-bold">ورود ادمین</h4>
+        {% if error %}<div class="alert alert-danger py-2">{{ error }}</div>{% endif %}
         <form method="post" action="/login">
           <div class="mb-3">
-            <input type="password" name="password" class="form-control" placeholder="رمز عبور" autofocus required>
+            <input type="password" name="password" class="form-control form-control-lg text-center" placeholder="رمز عبور" autofocus required>
           </div>
-          <button type="submit" class="btn btn-primary w-100">ورود</button>
+          <button type="submit" class="btn btn-primary btn-lg w-100">ورود</button>
         </form>
       </div>
     </div>
