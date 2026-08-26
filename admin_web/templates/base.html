@@ -82,7 +82,8 @@
   .sidebar a.nav-item.active i { color: #93a8ff; }
   .sidebar .mt-auto { margin-top: auto; }
   main.content {
-    margin-inline-end: 240px;
+    /* سایدبار فیزیکی سمت راست است؛ در RTL باید مارجین سمت راست داده شود */
+    margin-right: 240px;
     padding: 28px 32px 40px;
     max-width: 1200px;
   }
@@ -140,7 +141,7 @@
   .page-title { font-weight: 800; font-size: 1.35rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: .55rem; }
   .page-title i { color: var(--accent); }
   footer.footer {
-    margin-inline-end: 240px;
+    margin-right: 240px;
     text-align: center;
     padding: 14px 0 20px;
     color: #9aa3b8;
@@ -161,7 +162,7 @@
     .sidebar .nav-label { display: none; }
     .sidebar a.nav-item, .sidebar button.logout-btn { width: auto; margin-bottom: 0; padding: 8px 12px; }
     .sidebar .mt-auto { margin-top: 0; margin-inline-start: auto; width: auto !important; }
-    main.content, footer.footer { margin-inline-end: 0; padding-inline: 16px; }
+    main.content, footer.footer { margin-right: 0 !important; padding-inline: 16px; }
   }
 </style>
 </head>
