@@ -15,3 +15,4 @@ venv/
 # سیستم
 .DS_Store
 Thumbs.db
+.claude/
